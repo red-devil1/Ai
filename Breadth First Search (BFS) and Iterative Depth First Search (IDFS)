@@ -1,0 +1,789 @@
+EXPERIMENT 1
+Breadth First Search (BFS) and Iterative Depth First Search (IDFS)
+Step-by-step practical chapter | Source PDF pages 4–14
+1. Aim
+Implement BFS and iterative DFS on the same graph, search for a goal node, and compare traversal behavior.
+2. Tools Required
+Python 3.x; VS Code, PyCharm, IDLE, or Google Colab. No external Python packages are required.
+3. Setup
+Use Python 3 and an editor or notebook. No third-party packages are needed for this experiment.
+4. Step-by-Step Procedure
+Step 1: Prepare the workspace
+1.	Install Python 3 if required. In VS Code, create/open a folder named AI_Practicals.
+2.	Create a file named `exp1_bfs_dfs.py`.
+Step 2: Enter the program
+3.	Copy the full code below into the file and save it.
+4.	The graph and neighbor ordering follow the source practical: A connects to B and C; B connects to D and E; C connects to F; E connects to F.
+from collections import deque
+
+graph = {
+    "A": ["B", "C"],
+    "B": ["D", "E"],
+    "C": ["F"],
+    "D": [],
+    "E": ["F"],
+    "F": []
+}
+
+def bfs(start, goal):
+    queue = deque([start])
+    visited = set()
+    order = []
+    while queue:
+        node = queue.popleft()
+        if node in visited:
+            continue
+        visited.add(node)
+        order.append(node)
+        if node == goal:
+            return order, True
+        for neighbour in graph[node]:
+            if neighbour not in visited:
+                queue.append(neighbour)
+    return order, False
+
+def iterative_dfs(start, goal):
+    stack = [start]
+    visited = set()
+    order = []
+    while stack:
+        node = stack.pop()
+        if node in visited:
+            continue
+        visited.add(node)
+        order.append(node)
+        if node == goal:
+            return order, True
+        # Reverse so the listed first neighbor is visited first.
+        for neighbour in reversed(graph[node]):
+            if neighbour not in visited:
+                stack.append(neighbour)
+    return order, False
+
+start = input("Enter starting node (A-F): ").upper()
+goal = input("Enter goal node (A-F): ").upper()
+if start not in graph or goal not in graph:
+    print("Invalid node. Enter a node from A to F.")
+else:
+    b_order, b_found = bfs(start, goal)
+    d_order, d_found = iterative_dfs(start, goal)
+    print("BFS traversal:", " -> ".join(b_order))
+    print("BFS goal found:", b_found)
+    print("Iterative DFS traversal:", " -> ".join(d_order))
+    print("DFS goal found:", d_found)
+    print("BFS visited nodes:", len(b_order))
+    print("DFS visited nodes:", len(d_order))
+
+Step 3: Run the experiment
+5.	Open the terminal in the same folder.
+6.	Run `python exp1_bfs_dfs.py` on Windows/Linux/macOS, or `py exp1_bfs_dfs.py` on Windows if needed.
+7.	Enter `A` as the start node and `E` as the goal node.
+Step 4: Repeat and compare
+8.	Run again with goal `F`, then with start `B` and goal `F`.
+9.	Compare the order and number of visited nodes printed by BFS and DFS. Neighbor order can affect DFS traversal order.
+5. Verification and Troubleshooting
+•	For start A and goal E, both algorithms should find E; BFS visits level-by-level while DFS follows a branch deeply first.
+•	Both have O(V + E) time complexity for an adjacency-list graph. BFS can use more memory on wide graphs; DFS is not guaranteed to find the shortest path.
+•	If an invalid-node message appears, enter only A, B, C, D, E, or F.
+6. Shortcut / Improvement Notes
+Use `collections.deque` for an efficient FIFO queue. Mark nodes visited when removing them from the queue/stack to keep the implementation clear; for larger graphs, marking on insertion can reduce duplicate entries.
+7. Expected Result and Conclusion
+BFS and iterative DFS were implemented and their traversal order and number of visited nodes compared.
+8. Viva / Review Questions
+10.	What data structure is used by BFS?
+11.	How does iterative DFS differ from BFS?
+12.	What are their time complexities?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 4–14.
+
+
+
+
+EXPERIMENT 2
+A* Search and Recursive Best-First Search (RBFS)
+Step-by-step practical chapter | Source PDF pages 15–28
+1. Aim
+Implement A* and RBFS on the same weighted graph and compare the resulting paths and path costs.
+2. Tools Required
+Python 3.x; VS Code, PyCharm, IDLE, or Google Colab. No external packages are required.
+3. Setup
+Use Python 3 and an editor or notebook. No third-party packages are needed for this experiment.
+4. Step-by-Step Procedure
+Step 1: Create the file
+1.	Create `exp2_astar_rbfs.py` in your practicals folder.
+import heapq
+
+graph = {
+    "A": [("B", 1), ("C", 4)],
+    "B": [("D", 2), ("E", 5)],
+    "C": [("F", 3)],
+    "D": [("G", 5)],
+    "E": [("G", 1)],
+    "F": [("G", 2)],
+    "G": []
+}
+h = {"A": 5, "B": 4, "C": 3, "D": 3, "E": 1, "F": 2, "G": 0}
+
+def astar(start, goal):
+    pq = [(h[start], 0, start, [start])]
+    best_cost = {start: 0}
+    while pq:
+        f, cost, node, path = heapq.heappop(pq)
+        if node == goal:
+            return path, cost
+        if cost > best_cost.get(node, float("inf")):
+            continue
+        for nxt, edge_cost in graph[node]:
+            new_cost = cost + edge_cost
+            if new_cost < best_cost.get(nxt, float("inf")):
+                best_cost[nxt] = new_cost
+                heapq.heappush(pq, (new_cost + h[nxt], new_cost, nxt, path + [nxt]))
+    return None, float("inf")
+
+def rbfs(node, goal, cost, path, f_node, f_limit):
+    if node == goal:
+        return (path, cost), f_node
+    successors = []
+    for nxt, edge_cost in graph[node]:
+        if nxt not in path:
+            new_cost = cost + edge_cost
+            f = max(new_cost + h[nxt], f_node)
+            successors.append([f, nxt, new_cost, path + [nxt]])
+    if not successors:
+        return None, float("inf")
+    while successors:
+        successors.sort(key=lambda x: x[0])
+        best = successors[0]
+        if best[0] > f_limit:
+            return None, best[0]
+        alternative = successors[1][0] if len(successors) > 1 else float("inf")
+        result, new_f = rbfs(best[1], goal, best[2], best[3],
+                             best[0], min(f_limit, alternative))
+        best[0] = new_f
+        if result is not None:
+            return result, new_f
+    return None, float("inf")
+
+start = input("Enter starting node (A-G): ").upper()
+goal = input("Enter goal node (A-G): ").upper()
+if start not in graph or goal not in graph:
+    print("Invalid node. Enter A through G.")
+else:
+    a_path, a_cost = astar(start, goal)
+    r_result, _ = rbfs(start, goal, 0, [start], h[start], float("inf"))
+    print("\nA* path:", " -> ".join(a_path) if a_path else "Not found")
+    print("A* total cost:", a_cost)
+    if r_result:
+        r_path, r_cost = r_result
+        print("RBFS path:", " -> ".join(r_path))
+        print("RBFS total cost:", r_cost)
+    else:
+        print("RBFS path not found")
+
+Step 2: Review the graph and heuristic
+2.	The graph uses weighted edges and heuristic values like the source practical. A* evaluates f(n) = g(n) + h(n). RBFS keeps an f-limit and may backtrack.
+3.	For a clean comparison, use the same graph, heuristic, start node, and goal node for both algorithms.
+Step 3: Enter and run the program
+4.	Copy the complete code below and save it.
+5.	Run `python exp2_astar_rbfs.py`. Enter start `A` and goal `G`.
+import heapq
+
+graph = {
+    "A": [("B", 1), ("C", 4)],
+    "B": [("D", 2), ("E", 5)],
+    "C": [("F", 3)],
+    "D": [("G", 5)],
+    "E": [("G", 1)],
+    "F": [("G", 2)],
+    "G": []
+}
+h = {"A": 5, "B": 4, "C": 3, "D": 3, "E": 1, "F": 2, "G": 0}
+
+def astar(start, goal):
+    pq = [(h[start], 0, start, [start])]
+    best_cost = {start: 0}
+    while pq:
+        f, cost, node, path = heapq.heappop(pq)
+        if node == goal:
+            return path, cost
+        if cost > best_cost.get(node, float("inf")):
+            continue
+        for nxt, edge_cost in graph[node]:
+            new_cost = cost + edge_cost
+            if new_cost < best_cost.get(nxt, float("inf")):
+                best_cost[nxt] = new_cost
+                heapq.heappush(pq, (new_cost + h[nxt], new_cost, nxt, path + [nxt]))
+    return None, float("inf")
+
+def rbfs(node, goal, cost, path, f_node, f_limit):
+    if node == goal:
+        return (path, cost), f_node
+    successors = []
+    for nxt, edge_cost in graph[node]:
+        if nxt not in path:
+            new_cost = cost + edge_cost
+            f = max(new_cost + h[nxt], f_node)
+            successors.append([f, nxt, new_cost, path + [nxt]])
+    if not successors:
+        return None, float("inf")
+    while successors:
+        successors.sort(key=lambda x: x[0])
+        best = successors[0]
+        if best[0] > f_limit:
+            return None, best[0]
+        alternative = successors[1][0] if len(successors) > 1 else float("inf")
+        result, new_f = rbfs(best[1], goal, best[2], best[3],
+                             best[0], min(f_limit, alternative))
+        best[0] = new_f
+        if result is not None:
+            return result, new_f
+    return None, float("inf")
+
+start = input("Enter starting node (A-G): ").upper()
+goal = input("Enter goal node (A-G): ").upper()
+if start not in graph or goal not in graph:
+    print("Invalid node. Enter A through G.")
+else:
+    a_path, a_cost = astar(start, goal)
+    r_result, _ = rbfs(start, goal, 0, [start], h[start], float("inf"))
+    print("\nA* path:", " -> ".join(a_path) if a_path else "Not found")
+    print("A* total cost:", a_cost)
+    if r_result:
+        r_path, r_cost = r_result
+        print("RBFS path:", " -> ".join(r_path))
+        print("RBFS total cost:", r_cost)
+    else:
+        print("RBFS path not found")
+
+Step 4: Try a second goal
+6.	Run the program again with goal `F` or `E`.
+7.	Record each path and total cost. RBFS can regenerate states due to backtracking, while A* retains frontier nodes in memory.
+5. Verification and Troubleshooting
+•	For A to G, the provided graph has low-cost routes through B→E or C→F; record the actual path/cost reported by the program.
+•	A* uses a priority queue and typically stores more frontier information. RBFS uses recursion and an f-limit to control memory.
+•	Optimality depends on suitable heuristic conditions. Verify that heuristic values are appropriate for the edge costs before claiming optimality.
+6. Shortcut / Improvement Notes
+Use one shared graph and heuristic dictionary for both implementations to avoid accidental differences. For rigorous comparisons, count expanded nodes and test an admissible heuristic.
+7. Expected Result and Conclusion
+A* and RBFS were run on the same weighted graph and their paths and costs compared.
+8. Viva / Review Questions
+8.	What do g(n) and h(n) represent?
+9.	What is the purpose of the RBFS f-limit?
+10.	Why can RBFS use less memory than A*?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 15–28.
+
+
+EXPERIMENT 3
+Decision Tree Learning Algorithm for Classification
+Step-by-step practical chapter | Source PDF pages 29–38
+1. Aim
+Train a decision tree on the Iris dataset, evaluate it on test data, and visualize the tree.
+2. Tools Required
+Python 3.x; VS Code/Jupyter/Google Colab; scikit-learn and matplotlib.
+3. Installation Command
+python -m pip install scikit-learn matplotlib
+4. Step-by-Step Procedure
+Step 1: Install libraries
+1.	Open the terminal or notebook. Run the installation command shown below if the libraries are not already available.
+Step 2: Create the program
+2.	Create `exp3_decision_tree.py` and paste the code below. It uses the Iris dataset provided by scikit-learn, avoiding a separate download.
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data, iris.target, test_size=0.2, random_state=42, stratify=iris.target
+)
+
+model = DecisionTreeClassifier(criterion="gini", max_depth=3, random_state=42)
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+print("Accuracy:", round(accuracy_score(y_test, pred) * 100, 2), "%")
+print("Confusion matrix:\n", confusion_matrix(y_test, pred))
+print(classification_report(y_test, pred, target_names=iris.target_names))
+
+plt.figure(figsize=(14, 8))
+plot_tree(model, feature_names=iris.feature_names,
+          class_names=iris.target_names, filled=True, rounded=True)
+plt.title("Decision Tree - Iris Classification")
+plt.tight_layout()
+plt.show()
+
+Step 3: Train and test
+3.	Run `python exp3_decision_tree.py`. The dataset is split into training and testing sets with stratification.
+4.	Read the accuracy, confusion matrix, and classification report.
+Step 4: View the decision tree
+5.	The program opens a tree visualization window. If running in a notebook, the plot should appear in the output area.
+6.	Observe which feature and threshold appear near the root; these are early decision rules used by the model.
+5. Verification and Troubleshooting
+•	The program should print a numeric accuracy, confusion matrix, and precision/recall/F1 report.
+•	A tree plot with feature names and class labels should appear.
+•	If plotting fails in a headless environment, save the plot using `plt.savefig('decision_tree.png', dpi=150)` before `plt.show()`.
+6. Shortcut / Improvement Notes
+Use `random_state` to make the split reproducible. `max_depth` helps keep the tree readable and can reduce overfitting.
+7. Expected Result and Conclusion
+A DecisionTreeClassifier was trained and evaluated on Iris test data, and its decision rules were visualized.
+8. Viva / Review Questions
+7.	What is a decision tree?
+8.	What does max_depth control?
+9.	Why use a confusion matrix?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 29–38.
+
+
+
+EXPERIMENT 4
+Feed Forward Backpropagation Neural Network
+Step-by-step practical chapter | Source PDF pages 39–48
+1. Aim
+Train a feed-forward neural network, use backpropagation to learn from data, and evaluate predictions on test data.
+2. Tools Required
+Python 3.x; scikit-learn; NumPy (installed as a dependency); Iris dataset.
+3. Installation Command
+python -m pip install scikit-learn
+4. Step-by-Step Procedure
+Step 1: Prepare Python
+1.	Open a terminal and install scikit-learn if necessary.
+Step 2: Create the script
+2.	Create `exp4_neural_network.py`. The scikit-learn `MLPClassifier` implements a feed-forward neural network trained using backpropagation-based optimization.
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data, iris.target, test_size=0.2, random_state=42, stratify=iris.target
+)
+
+model = make_pipeline(
+    StandardScaler(),
+    MLPClassifier(hidden_layer_sizes=(10,), activation="relu",
+                  solver="adam", max_iter=2000, random_state=42)
+)
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+print("Test accuracy:", round(accuracy_score(y_test, pred) * 100, 2), "%")
+print(classification_report(y_test, pred, target_names=iris.target_names))
+print("First five predictions:", iris.target_names[pred[:5]])
+print("First five actual labels:", iris.target_names[y_test[:5]])
+
+Step 3: Run training
+3.	Run `python exp4_neural_network.py`. The code scales the input features, trains the network, and predicts the test set.
+4.	Allow training to finish; convergence can take time depending on the computer.
+Step 4: Review results
+5.	Read the test accuracy and classification report.
+6.	If a convergence warning appears, increase `max_iter` or tune the model rather than ignoring the warning.
+5. Verification and Troubleshooting
+•	The output should include test accuracy and a classification report.
+•	The first five predicted class names can be compared with the actual class names.
+•	If training does not converge, increase `max_iter`, verify feature scaling, and try a smaller network or different solver.
+6. Shortcut / Improvement Notes
+Scaling is important for neural networks. A pipeline ensures the scaler is fitted only on training data, reducing data leakage.
+7. Expected Result and Conclusion
+A feed-forward neural network was trained using scaled Iris features and evaluated on held-out test data.
+8. Viva / Review Questions
+7.	What is backpropagation?
+8.	What are input, hidden, and output layers?
+9.	Why is feature scaling useful?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 39–48.
+
+
+
+EXPERIMENT 5
+Support Vector Machines (SVM) for Binary Classification
+Step-by-step practical chapter | Source PDF pages 49–58
+1. Aim
+Train an SVM binary classifier, tune its parameters, and evaluate its performance.
+2. Tools Required
+Python 3.x; scikit-learn; Wisconsin Breast Cancer dataset included with scikit-learn.
+3. Installation Command
+python -m pip install scikit-learn
+4. Step-by-Step Procedure
+Step 1: Install and prepare
+1.	Install scikit-learn if it is not available. Create `exp5_svm.py`.
+Step 2: Load the binary dataset
+2.	The program loads the Breast Cancer Wisconsin dataset, which has two target classes.
+3.	The dataset is split into training and testing sets with stratification.
+Step 3: Train and tune
+4.	The program uses a pipeline to scale features and GridSearchCV to compare selected C and kernel settings.
+5.	Run `python exp5_svm.py` and wait for the parameter search to finish.
+Step 4: Evaluate
+6.	Review the best parameters, test accuracy, confusion matrix, and classification report.
+7.	Remember that accuracy alone can hide class-specific errors; review precision and recall as well.
+5. Complete Program
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+data = load_breast_cancer()
+X_train, X_test, y_train, y_test = train_test_split(
+    data.data, data.target, test_size=0.2, random_state=42, stratify=data.target
+)
+pipe = make_pipeline(StandardScaler(), SVC())
+params = {
+    "svc__kernel": ["linear", "rbf"],
+    "svc__C": [0.1, 1, 10],
+    "svc__gamma": ["scale"]
+}
+search = GridSearchCV(pipe, params, cv=5, scoring="accuracy", n_jobs=-1)
+search.fit(X_train, y_train)
+pred = search.predict(X_test)
+
+print("Best parameters:", search.best_params_)
+print("Test accuracy:", round(accuracy_score(y_test, pred) * 100, 2), "%")
+print("Confusion matrix:\n", confusion_matrix(y_test, pred))
+print(classification_report(y_test, pred, target_names=data.target_names))
+
+5. Verification and Troubleshooting
+•	The program should display the best parameter combination and test metrics.
+•	Scaling is applied within the pipeline so each cross-validation fold learns its scaler only from its training fold.
+•	If the search takes too long, reduce the parameter grid; do not tune on the test set.
+6. Shortcut / Improvement Notes
+Standardize features before SVM training. Use cross-validation for tuning and keep the test set untouched until final evaluation.
+7. Expected Result and Conclusion
+An SVM model was tuned using cross-validation and evaluated on held-out binary classification data.
+8. Viva / Review Questions
+8.	What is a support vector?
+9.	What is the role of C?
+10.	Why scale features before SVM?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 49–58.
+
+
+
+EXPERIMENT 6
+AdaBoost Ensemble Learning
+Step-by-step practical chapter | Source PDF pages 59–67
+1. Aim
+Train an AdaBoost ensemble of weak classifiers and compare it with an individual decision stump.
+2. Tools Required
+Python 3.x; scikit-learn; Iris dataset.
+3. Installation Command
+python -m pip install scikit-learn
+4. Step-by-Step Procedure
+Step 1: Prepare the environment
+1.	Install scikit-learn if required and create `exp6_adaboost.py`.
+Step 2: Load and split the data
+2.	The program loads the Iris dataset and creates stratified training and test sets.
+3.	A decision stump (a decision tree with depth 1) is used as the weak learner.
+Step 3: Train both models
+4.	The code trains one stump and an AdaBoost ensemble, then predicts the same test set.
+5.	Run `python exp6_adaboost.py`.
+Step 4: Compare performance
+6.	Compare the accuracy and classification reports for the single weak learner and the ensemble.
+7.	Results can vary by library version and dataset split; report the output actually produced on your system.
+5. Complete Program
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data, iris.target, test_size=0.2, random_state=42, stratify=iris.target
+)
+
+stump = DecisionTreeClassifier(max_depth=1, random_state=42)
+stump.fit(X_train, y_train)
+stump_pred = stump.predict(X_test)
+
+# Recent scikit-learn versions use estimator=; older versions may use base_estimator=.
+boost = AdaBoostClassifier(
+    estimator=DecisionTreeClassifier(max_depth=1, random_state=42),
+    n_estimators=50, learning_rate=1.0, random_state=42
+)
+boost.fit(X_train, y_train)
+boost_pred = boost.predict(X_test)
+
+print("Single stump accuracy:", round(accuracy_score(y_test, stump_pred) * 100, 2), "%")
+print("AdaBoost accuracy:", round(accuracy_score(y_test, boost_pred) * 100, 2), "%")
+print("\nAdaBoost report:")
+print(classification_report(y_test, boost_pred, target_names=iris.target_names))
+
+5. Verification and Troubleshooting
+•	The program reports both single-stump and AdaBoost accuracy.
+•	If your scikit-learn version says `unexpected keyword estimator`, replace `estimator=` with `base_estimator=` in the AdaBoostClassifier call.
+•	AdaBoost reweights samples that were misclassified by earlier weak learners; noisy samples can affect performance.
+6. Shortcut / Improvement Notes
+Start with a simple weak learner and compare it against the ensemble on the same split. Record both metrics rather than assuming the ensemble always wins.
+7. Expected Result and Conclusion
+AdaBoost was trained and evaluated, and its results were compared with a single decision stump.
+8. Viva / Review Questions
+8.	What is a weak learner?
+9.	How does AdaBoost use misclassified samples?
+10.	Why can noisy data be a problem?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 59–67.
+
+
+EXPERIMENT 7
+Naive Bayes Classifier
+Step-by-step practical chapter | Source PDF pages 68–76
+1. Aim
+Train a Naive Bayes classifier, inspect predicted class probabilities, and evaluate the model.
+2. Tools Required
+Python 3.x; scikit-learn; Iris dataset.
+3. Installation Command
+python -m pip install scikit-learn
+4. Step-by-Step Procedure
+Step 1: Prepare the script
+1.	Create `exp7_naive_bayes.py` and install scikit-learn if needed.
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data, iris.target, test_size=0.2, random_state=42, stratify=iris.target
+)
+model = GaussianNB()
+model.fit(X_train, y_train)
+
+pred = model.predict(X_test)
+probs = model.predict_proba(X_test)
+print("First five predictions:", iris.target_names[pred[:5]])
+print("Actual classes:", iris.target_names[y_test[:5]])
+print("Probabilities for first test sample:")
+for name, prob in zip(iris.target_names, probs[0]):
+    print(f"{name}: {prob:.4f}")
+print("Accuracy:", round(accuracy_score(y_test, pred) * 100, 2), "%")
+print("Confusion matrix:\n", confusion_matrix(y_test, pred))
+print(classification_report(y_test, pred, target_names=iris.target_names))
+
+Step 2: Load data and train
+2.	The program uses the Gaussian Naive Bayes classifier for the continuous numeric Iris features.
+3.	Run `python exp7_naive_bayes.py`.
+Step 3: Inspect predictions and probabilities
+4.	The program prints the first five predicted classes, their actual labels, and the predicted class probabilities for one test example.
+5.	Each probability row should sum to approximately 1.
+Step 4: Evaluate the model
+6.	Review the accuracy, confusion matrix, and classification report.
+5. Verification and Troubleshooting
+•	The predicted class labels should be printed alongside actual labels.
+•	The three probabilities for the first test sample should add up to approximately 1.0.
+•	GaussianNB is appropriate for continuous numeric features under a Gaussian class-conditional assumption; categorical data may require another Naive Bayes variant.
+6. Shortcut / Improvement Notes
+Use `predict_proba()` to inspect confidence estimates, but do not interpret them as guaranteed certainty; probability calibration can vary.
+7. Expected Result and Conclusion
+A Gaussian Naive Bayes model was trained, class probabilities were inspected, and test metrics were calculated.
+8. Viva / Review Questions
+7.	What is Bayes' theorem?
+8.	What is the naive independence assumption?
+9.	What does predict_proba return?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 68–76.
+
+
+EXPERIMENT 8
+K-Nearest Neighbors (K-NN) Classification
+Step-by-step practical chapter | Source PDF pages 77–84
+1. Aim
+Apply K-NN to classify Iris samples and evaluate prediction accuracy.
+2. Tools Required
+Python 3.x; scikit-learn; Iris dataset.
+3. Installation Command
+python -m pip install scikit-learn
+4. Step-by-Step Procedure
+Step 1: Create the file
+1.	Create `exp8_knn.py` and ensure scikit-learn is installed.
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data, iris.target, test_size=0.2, random_state=42, stratify=iris.target
+)
+model = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=5))
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+print("Accuracy:", round(accuracy_score(y_test, pred) * 100, 2), "%")
+print("Confusion matrix:\n", confusion_matrix(y_test, pred))
+print(classification_report(y_test, pred, target_names=iris.target_names))
+scores = cross_val_score(model, X_train, y_train, cv=5)
+print("5-fold CV mean accuracy:", round(scores.mean() * 100, 2), "%")
+
+Step 2: Load and scale the data
+2.	K-NN is distance-based, so the code uses StandardScaler in a pipeline.
+3.	The dataset is split into training and testing sets using stratification.
+Step 3: Train and predict
+4.	The classifier uses k=5 neighbors and Euclidean distance by default.
+5.	Run `python exp8_knn.py`.
+Step 4: Check and tune
+6.	Read accuracy, confusion matrix, and classification report.
+7.	Optional: try n_neighbors values such as 3, 5, and 7 and compare them using cross-validation.
+5. Verification and Troubleshooting
+•	The program prints test accuracy and cross-validation mean accuracy.
+•	K-NN predicts using the labels of nearby training examples; scaling prevents large-unit features from dominating distance.
+•	If results change with k, record the selected value and evaluation method. Choose k using training/cross-validation data, not by repeatedly optimizing against the test set.
+6. Shortcut / Improvement Notes
+Scale features and use cross-validation to choose k. Smaller k can be sensitive to noise; larger k can smooth class boundaries.
+7. Expected Result and Conclusion
+K-NN was used to classify Iris samples, and its predictions were evaluated.
+8. Viva / Review Questions
+8.	How does K-NN classify a sample?
+9.	Why does feature scaling matter?
+10.	How does the choice of k affect results?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 77–84.
+
+
+
+EXPERIMENT 9
+Association Rule Mining using Apriori
+Step-by-step practical chapter | Source PDF pages 85–92
+1. Aim
+Find frequent itemsets and generate association rules, then interpret support, confidence, and lift.
+2. Tools Required
+Python 3.x; pandas; mlxtend.
+3. Installation Command
+python -m pip install pandas mlxtend
+4. Step-by-Step Procedure
+Step 1: Install the libraries
+1.	Run the installation command below in your terminal or notebook.
+Step 2: Create transaction data
+2.	Create `exp9_apriori.py`. The example uses a small, illustrative shopping basket dataset so the result is easy to inspect.
+Step 3: Run Apriori
+3.	The program converts transactions to one-hot encoded columns and runs Apriori with a minimum support threshold.
+4.	Run `python exp9_apriori.py`.
+Step 4: Generate and interpret rules
+5.	Association rules are generated with a minimum confidence threshold.
+6.	Support measures how often the itemset occurs; confidence measures how often the consequent occurs when the antecedent occurs; lift compares this confidence with the consequent's baseline frequency.
+5. Complete Program
+import pandas as pd
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
+
+transactions = [
+    ["Milk", "Bread", "Butter"],
+    ["Bread", "Butter"],
+    ["Milk", "Bread"],
+    ["Milk", "Bread", "Butter", "Eggs"],
+    ["Bread", "Eggs"],
+    ["Milk", "Butter"],
+    ["Milk", "Bread", "Eggs"],
+    ["Bread", "Butter", "Eggs"]
+]
+
+encoder = TransactionEncoder()
+encoded = encoder.fit(transactions).transform(transactions)
+basket = pd.DataFrame(encoded, columns=encoder.columns_)
+
+frequent = apriori(basket, min_support=0.25, use_colnames=True)
+print("Frequent itemsets:")
+print(frequent.sort_values("support", ascending=False).to_string(index=False))
+
+rules = association_rules(frequent, metric="confidence", min_threshold=0.5)
+if rules.empty:
+    print("\nNo rules met the selected thresholds.")
+else:
+    cols = ["antecedents", "consequents", "support", "confidence", "lift"]
+    print("\nAssociation rules:")
+    print(rules[cols].sort_values("confidence", ascending=False).to_string(index=False))
+
+5. Verification and Troubleshooting
+•	Frequent itemsets should be printed with support values; qualifying rules should show support, confidence, and lift.
+•	If no rules appear, lower the confidence threshold slightly or check that the frequent itemset threshold is not too high.
+•	A lift greater than 1 suggests a positive association relative to the consequent's baseline frequency; it does not prove causation.
+6. Shortcut / Improvement Notes
+Begin with a small transparent dataset to validate the workflow, then adjust minimum support and confidence according to the size and purpose of the real dataset.
+7. Expected Result and Conclusion
+Apriori was applied to transaction data to find frequent itemsets and generate association rules.
+8. Viva / Review Questions
+7.	What is support?
+8.	What is confidence?
+9.	What does lift greater than 1 indicate?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 85–92.
+
+
+
+EXPERIMENT 10
+Demonstration of TensorFlow and Keras Tools
+Step-by-step practical chapter | Source PDF pages 93–99
+1. Aim
+Explore TensorFlow/Keras by building, training, evaluating, and testing a neural network for handwritten digit classification.
+2. Tools Required
+Python 3.x; TensorFlow with Keras; Matplotlib; internet access may be needed for the first MNIST download.
+3. Installation Command
+python -m pip install tensorflow matplotlib
+4. Step-by-Step Procedure
+Step 1: Install TensorFlow
+1.	Create a clean virtual environment if possible, then install TensorFlow using the command below.
+2.	TensorFlow compatibility depends on the Python version and operating system. If installation fails, use a Python version supported by the TensorFlow release you install.
+Step 2: Create the program
+3.	Create `exp10_tensorflow_mnist.py` and paste the code below.
+4.	The source practical describes TensorFlow/Keras and handwritten digit classification. This procedure uses the standard MNIST dataset for that task.
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load MNIST handwritten digits
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+
+# Normalize pixels to the range 0..1
+x_train = x_train.astype("float32") / 255.0
+x_test = x_test.astype("float32") / 255.0
+
+# Use a subset for a quicker classroom demonstration
+x_train_small = x_train[:20000]
+y_train_small = y_train[:20000]
+
+model = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    tf.keras.layers.Dense(128, activation="relu"),
+    tf.keras.layers.Dense(10, activation="softmax")
+])
+model.compile(optimizer="adam",
+              loss="sparse_categorical_crossentropy",
+              metrics=["accuracy"])
+
+model.summary()
+model.fit(x_train_small, y_train_small, epochs=3,
+          validation_split=0.1, batch_size=128, verbose=1)
+
+test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0)
+print("Test loss:", round(float(test_loss), 4))
+print("Test accuracy:", round(float(test_accuracy) * 100, 2), "%")
+
+predictions = model.predict(x_test[:5], verbose=0).argmax(axis=1)
+fig, axes = plt.subplots(1, 5, figsize=(10, 3))
+for i, ax in enumerate(axes):
+    ax.imshow(x_test[i], cmap="gray")
+    ax.set_title(f"Pred: {predictions[i]} / True: {y_test[i]}")
+    ax.axis("off")
+plt.tight_layout()
+plt.show()
+
+Step 3: Load and preprocess MNIST
+5.	The code loads 28×28 grayscale images and scales pixel values from 0–255 to 0–1.
+6.	A subset of the training data is used for a faster classroom run; the complete test set is retained for evaluation.
+Step 4: Build and train the model
+7.	The model contains a Flatten layer, a hidden Dense layer, and a 10-unit output layer.
+8.	Run `python exp10_tensorflow_mnist.py`. The first run may download MNIST; training can take a few minutes.
+Step 5: Evaluate and inspect predictions
+9.	Review test loss and accuracy, then view a few predicted digits alongside their true labels.
+10.	If a plot window does not open, save the figure with `plt.savefig('mnist_predictions.png')` before `plt.show()`.
+5. Verification and Troubleshooting
+•	The model summary should show the network layers and output dimensions.
+•	Training should display loss/accuracy, followed by test loss and test accuracy.
+•	If TensorFlow cannot be installed, check the Python/TensorFlow compatibility matrix for your platform. If MNIST download fails, verify internet access or use a pre-downloaded dataset only if your course permits it.
+6. Shortcut / Improvement Notes
+Normalize image pixels before training and begin with a subset to shorten runtime. For a formal report, record the subset size, epoch count, test accuracy, and hardware/software versions.
+7. Expected Result and Conclusion
+TensorFlow/Keras was used to build and train a neural network for MNIST digit classification, evaluate test performance, and inspect predictions.
+8. Viva / Review Questions
+11.	What is TensorFlow?
+12.	What does the softmax output represent?
+13.	Why are MNIST pixel values normalized?
+Prepared from the supplied Artificial Intelligence Complete 1 to 10 PDF. The source experiment topics and sequence are retained; practical execution notes and troubleshooting guidance have been added. Reference section: pages 93–99.
